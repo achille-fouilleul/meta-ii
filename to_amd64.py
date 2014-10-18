@@ -49,19 +49,24 @@ class Amd64:
         instr('call {}'.format(name))
 
     def store_flag(self, source):
-        instr('movb {}, flag(%rip)'.format(source))
+        instr('movb {}, 16(%rsp)'.format(source))
 
     def test_flag(self):
-        instr('cmpb $0, flag(%rip)')
+        instr('cmpb $0, 16(%rsp)')
+
+    def load_flag(self, dest):
+        instr('movb 16(%rsp), {}'.format(dest))
 
     def ADR(self, arg):
         pass
 
     def CLL(self, arg):
         self.call(arg)
+        self.store_flag('%al')
 
     def R(self):
         assert self.current_func is not None
+        self.load_flag('%al')
         # epilogue
         instr('add $24, %rsp')
         instr('.cfi_def_cfa_offset 8')
@@ -146,10 +151,6 @@ def to_amd64(reader):
     for k, v in strtab.items():
         print('{}:'.format(v))
         instr('.string "{}"'.format(k))
-
-    instr('.bss')
-    print('flag:')
-    instr('.zero 1')
 
 if __name__ == '__main__':
     to_amd64(sys.stdin)

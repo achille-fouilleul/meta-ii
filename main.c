@@ -14,14 +14,25 @@ static size_t buflen = 0;
 static char input[LINESIZE];
 static size_t inputlen = 0;
 
-static size_t position = 0;
+static int input_line = 1;
+static int input_pos = 1;
 
 static void advance(size_t n)
 {
 	fail_if(n > buflen);
-	memmove(buffer, buffer + n, buflen - n);
+	const char *s = buffer;
+	for (size_t i = 0; i < n; ++i) {
+		if (*s++ != '\n')
+			++input_pos;
+		else {
+			input_pos = 1;
+			++input_line;
+		}
+	}
+	char *d = buffer;
+	for (size_t i = n; i < buflen; ++i)
+		*d++ = *s++;
 	buflen -= n;
-	position += n;
 }
 
 static char peek(size_t i)
@@ -134,6 +145,7 @@ void CI(void)
 
 void ERROR()
 {
+	fprintf(stderr, "Syntax error at %d:%d\n", input_line, input_pos);
 	exit(1);
 }
 
@@ -183,6 +195,7 @@ int main(int argc, char *argv[])
 {
 	if (argc > 1)
 		fail_if(freopen(argv[1], "r", stdin) == NULL);
-	PROGRAM();
+	if (!PROGRAM())
+		ERROR();
 	return 0;
 }

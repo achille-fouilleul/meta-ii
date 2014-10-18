@@ -12,4 +12,5 @@ val set_output_counter : int -> unit
 val print : string -> unit
 val lb : unit -> unit
 val out : unit -> unit
+val ci : unit -> unit
 val gn : string ref -> string

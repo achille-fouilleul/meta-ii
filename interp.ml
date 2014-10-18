@@ -37,11 +37,9 @@ in
 if f_debug then
   LabelMap.iter (fun k v -> eprintf "%s: %d\n" k v) label_map;
 
-let switch = ref false in
 let gn label_ref =
   M2io.print (M2io.gn label_ref) 
 in
-let ci() = M2io.print(M2io.get_token()) in
 let cl s = M2io.print s in
 let trace pc instr =
   match instr with
@@ -58,6 +56,7 @@ let unquote s =
   String.sub s 1 (n - 2)
 in
 let rec call pc =
+  let flag = ref false in
   let label1 = ref "" in
   let label2 = ref "" in
   let rec loop pc =
@@ -68,29 +67,31 @@ let rec call pc =
     let pc' =
       match instr with
       | "BE", "" ->
-        if not(!switch) then
+        if not(!flag) then
           failwith "error";
         next
       | "BF", name ->
-        if not(!switch) then int_of_label name else next
+        if not(!flag) then int_of_label name else next
       | "BT", name ->
-        if !switch then int_of_label name else next
-      | "CI", "" -> ci(); next
+        if !flag then int_of_label name else next
+      | "CI", "" -> M2io.ci(); next
       | "CL", s -> cl (unquote s); next
-      | "CLL", name -> call(int_of_label name); next
+      | "CLL", name -> flag := call(int_of_label name); next
       | "GN1", "" -> gn label1; next
       | "GN2", "" -> gn label2; next
-      | "ID", "" -> switch := M2io.id(); next
+      | "ID", "" -> flag := M2io.id(); next
       | "LB", "" -> M2io.lb(); next
       | "OUT", "" -> M2io.out(); next
       | "R", "" -> -1
-      | "SET", "" -> switch := true; next
-      | "SR", "" -> switch := M2io.sr(); next
-      | "TST", s -> switch := M2io.tst (unquote s); next
+      | "SET", "" -> flag := true; next
+      | "SR", "" -> flag := M2io.sr(); next
+      | "TST", s -> flag := M2io.tst (unquote s); next
       | mnemo, _ -> failwith ("invalid instruction: " ^ mnemo)
     in
     if pc' >= 0 then
       loop pc'
+    else
+      !flag
   in
   loop pc
 in

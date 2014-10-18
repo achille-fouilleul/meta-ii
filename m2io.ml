@@ -130,6 +130,9 @@ let out() =
   output_col := 8;
   current_col := 1;;
 
+let ci() =
+  print(get_token());;
+
 let gn =
   let i = ref 0 in
   fun label_ref ->
